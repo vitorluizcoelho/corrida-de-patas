@@ -116,7 +116,7 @@
     <div class="screen active" id="screen-setup">
       <div class="title-row"><h1>Corrida de Patas</h1><div class="paws">🐾 🐾 🐾</div></div>
       <p class="subtitle">Cachorro contra gato. Quem toca mais rápido, vence!</p>
-      <div class="badge-standalone">P2P — conexão direta, sem servidor</div>
+      <div class="badge-standalone">P2P — conexão direta, sem servidor (via Nostr)</div>
 
       <label class="field-label">Escolha seu competidor</label>
       <div class="role-grid">
@@ -196,7 +196,7 @@
 </div>
 
 <script type="module">
-import { joinRoom } from 'https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent/+esm';
+import { joinRoom } from 'https://cdn.jsdelivr.net/npm/trystero/+esm';
 
 const APP_ID = 'corrida-de-patas-cachorro-gato-v1';
 const myToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
