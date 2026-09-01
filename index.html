@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Corrida de Patas (P2P)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#BFE7FF; --sky-bot:#EAF7FF; --grass:#8FCB53; --grass-dark:#5E9C34;
+    --dirt:#E7C393; --dirt-dark:#C79A5E; --sun:#FFC93C; --finish:#FF5D5D;
+    --cream:#FFF9EE; --ink:#3B2A20; --ink-soft:#7A6350; --dog:#C97B3D; --cat:#6B6EA8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:'Nunito',sans-serif; color:var(--ink);
+    background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-bot) 45%, var(--grass) 46%, var(--grass-dark) 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; overflow-x:hidden; padding:16px;
+  }
+  h1,h2,h3{font-family:'Baloo 2',cursive; margin:0;}
+  .sun{position:fixed; top:24px; right:28px; width:64px; height:64px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #FFE9A8, var(--sun)); box-shadow:0 0 0 8px rgba(255,201,60,0.25); z-index:0;}
+  .cloud{position:fixed; background:#fff; border-radius:50px; opacity:.85; z-index:0;}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+  .c1{width:70px;height:26px; top:70px; left:8%;} .c1::before{width:34px;height:34px; top:-16px; left:8px;} .c1::after{width:26px;height:26px; top:-10px; left:36px;}
+  .c2{width:54px;height:20px; top:130px; right:14%;} .c2::before{width:26px;height:26px; top:-12px; left:6px;} .c2::after{width:20px;height:20px; top:-8px; left:26px;}
+  .app{ position:relative; z-index:1; width:100%; max-width:640px; }
+  .card{ background:var(--cream); border-radius:28px; padding:28px 24px;
+    box-shadow:0 14px 0 rgba(59,42,32,0.12), 0 20px 40px rgba(59,42,32,0.18); border:3px solid rgba(59,42,32,0.08); }
+  .screen{display:none;} .screen.active{display:block; animation:pop .35s ease;}
+  @keyframes pop{from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .title-row{ text-align:center; margin-bottom:6px;} .title-row h1{ font-size:32px; color:var(--ink); letter-spacing:.5px;}
+  .title-row .paws{ font-size:20px; letter-spacing:6px; opacity:.7;}
+  .subtitle{ text-align:center; color:var(--ink-soft); font-weight:700; margin-top:4px; margin-bottom:20px; font-size:15px;}
+  .badge-standalone{ display:block; text-align:center; font-size:11px; font-weight:800; color:var(--ink-soft);
+    background:#EFE6D2; border-radius:10px; padding:5px 10px; margin:0 auto 18px auto; max-width:fit-content;}
+  .role-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;}
+  .role-btn{ border:3px solid transparent; border-radius:20px; padding:18px 10px; cursor:pointer; background:#fff;
+    font-family:'Baloo 2',cursive; font-size:17px; font-weight:700; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; box-shadow:0 4px 0 rgba(59,42,32,0.10);}
+  .role-btn .emoji{font-size:38px;} .role-btn:hover{transform:translateY(-2px);}
+  .role-btn.selected.dog{border-color:var(--dog); box-shadow:0 4px 0 var(--dog);}
+  .role-btn.selected.cat{border-color:var(--cat); box-shadow:0 4px 0 var(--cat);}
+  label.field-label{ display:block; font-weight:800; font-size:13px; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;}
+  .code-row{ display:flex; gap:10px; margin-bottom:8px;}
+  input.code-input{ flex:1; font-family:'Baloo 2',cursive; font-size:20px; letter-spacing:3px; text-align:center;
+    padding:12px 10px; border-radius:14px; border:3px solid #EADFCB; background:#fff; color:var(--ink); font-weight:700; min-width:0;
+    text-transform:uppercase;}
+  input.code-input:focus{ outline:none; border-color:var(--sun);}
+  .mini-btn{ border:none; border-radius:14px; padding:0 16px; background:#EADFCB; color:var(--ink);
+    font-family:'Baloo 2',cursive; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;}
+  .mini-btn:hover{ background:#e0d1b3; }
+  .field-hint{ font-size:12px; color:var(--ink-soft); margin-bottom:18px; font-weight:600; }
+  .duration-row{ display:flex; gap:10px; margin-bottom:22px;}
+  .pill{ flex:1; text-align:center; padding:12px 8px; border-radius:14px; border:2px solid #EADFCB;
+    background:#fff; font-weight:800; cursor:pointer; color:var(--ink-soft); font-size:14px;}
+  .pill.selected{ border-color:var(--sun); background:#FFF3D4; color:var(--ink);}
+  .primary-btn{ width:100%; border:none; border-radius:16px; padding:16px; cursor:pointer;
+    font-family:'Baloo 2',cursive; font-size:19px; font-weight:700; color:#fff;
+    background:linear-gradient(180deg, #FF7A5D, var(--finish)); box-shadow:0 5px 0 #C63E3E; transition:transform .1s ease;}
+  .primary-btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .primary-btn:active:not(:disabled){ transform:translateY(3px); box-shadow:0 2px 0 #C63E3E;}
+  .error-msg{ color:var(--finish); font-weight:800; font-size:13px; text-align:center; margin-top:10px; min-height:16px;}
+  .room-code-badge{ display:inline-block; background:#FFF3D4; border:2px dashed var(--sun); border-radius:12px;
+    padding:8px 18px; font-family:'Baloo 2',cursive; font-size:22px; letter-spacing:4px; font-weight:700; margin:0 auto;}
+  .center{ text-align:center; }
+  .waiting-dots::after{ content:"..."; animation:dots 1.2s steps(4,end) infinite; }
+  @keyframes dots{0%,20%{content:"";}40%{content:".";}60%{content:"..";}80%,100%{content:"...";}}
+  .paw-spinner{ font-size:34px; display:inline-block; animation:spin 1.4s linear infinite; margin:14px 0;}
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .countdown-num{ font-family:'Baloo 2',cursive; font-size:88px; text-align:center; color:var(--finish); margin:10px 0;}
+  .track-wrap{ margin:14px 0 8px 0; }
+  .lane{ position:relative; height:78px; border-radius:16px; margin-bottom:14px; overflow:hidden;
+    background:repeating-linear-gradient(90deg, var(--dirt) 0px, var(--dirt) 28px, var(--dirt-dark) 28px, var(--dirt-dark) 30px);
+    border:3px solid rgba(59,42,32,0.15);}
+  .lane .label{ position:absolute; top:6px; left:8px; font-family:'Baloo 2',cursive; font-size:12px; font-weight:700;
+    background:rgba(255,255,255,0.85); padding:2px 8px; border-radius:8px; z-index:3; color:var(--ink);}
+  .finish-flag{ position:absolute; right:6px; top:0; bottom:0; width:14px;
+    background:repeating-linear-gradient(45deg,#222 0 6px,#fff 6px 12px); z-index:2; border-radius:4px;}
+  .paw-trail{ position:absolute; inset:0; display:flex; align-items:center; z-index:1; opacity:.55; font-size:16px; padding-left:4px;}
+  .runner{ position:absolute; bottom:6px; left:6px; font-size:36px; z-index:4; transition:left .12s linear;
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.25));}
+  .runner.puff{ animation:hop .18s ease; }
+  @keyframes hop{ 0%{transform:translateY(0);} 40%{transform:translateY(-8px) rotate(-6deg);} 100%{transform:translateY(0);} }
+  .progress-pct{ position:absolute; right:20px; bottom:6px; font-weight:800; font-size:12px; color:var(--ink); z-index:3;
+    background:rgba(255,255,255,.75); padding:1px 6px; border-radius:6px;}
+  .instructions{ text-align:center; color:var(--ink-soft); font-weight:700; font-size:14px; margin:6px 0 16px 0;}
+  .tap-btn{ width:100%; padding:26px; border:none; border-radius:20px; cursor:pointer;
+    font-family:'Baloo 2',cursive; font-size:22px; font-weight:800; background:linear-gradient(180deg,#FFD166,var(--sun));
+    box-shadow:0 6px 0 #D69B1E; user-select:none; -webkit-user-select:none; touch-action:manipulation; color:var(--ink);}
+  .tap-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #D69B1E;}
+  .result-emoji{ font-size:64px; text-align:center; margin-bottom:6px;}
+  .result-title{ text-align:center; font-size:28px; margin-bottom:4px;}
+  .result-sub{ text-align:center; color:var(--ink-soft); font-weight:700; margin-bottom:20px;}
+  .btn-row{ display:flex; gap:10px; }
+  .secondary-btn{ flex:1; border:2px solid #EADFCB; background:#fff; border-radius:14px; padding:14px;
+    font-family:'Baloo 2',cursive; font-weight:700; color:var(--ink); cursor:pointer;}
+  .status-line{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:14px; font-weight:700;}
+  .footer-note{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:16px; opacity:.75;}
+  .conn-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#ccc; margin-right:6px; vertical-align:middle;}
+  .conn-dot.ok{ background:#5E9C34; }
+</style>
+</head>
+<body>
+
+<div class="sun"></div>
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<div class="app">
+  <div class="card">
+
+    <div class="screen active" id="screen-setup">
+      <div class="title-row"><h1>Corrida de Patas</h1><div class="paws">🐾 🐾 🐾</div></div>
+      <p class="subtitle">Cachorro contra gato. Quem toca mais rápido, vence!</p>
+      <div class="badge-standalone">P2P — conexão direta, sem servidor</div>
+
+      <label class="field-label">Escolha seu competidor</label>
+      <div class="role-grid">
+        <button class="role-btn dog" id="btn-dog"><span class="emoji">🐶</span> Cachorro</button>
+        <button class="role-btn cat" id="btn-cat"><span class="emoji">🐱</span> Gato</button>
+      </div>
+
+      <label class="field-label">Código da sala</label>
+      <div class="code-row">
+        <input type="text" id="room-code-input" class="code-input" maxlength="8" placeholder="EX: PATA1">
+        <button class="mini-btn" id="generate-btn">Gerar</button>
+      </div>
+      <p class="field-hint">Combine o mesmo código com quem vai jogar contra você.</p>
+
+      <label class="field-label">Distância da corrida (usada se você conectar primeiro)</label>
+      <div class="duration-row">
+        <div class="pill selected" id="pill-short">Sprint (30)</div>
+        <div class="pill" id="pill-long">Maratona (60)</div>
+      </div>
+
+      <button class="primary-btn" id="join-btn" disabled>Entrar na corrida</button>
+      <div class="error-msg" id="setup-error"></div>
+      <p class="status-line">Envie este mesmo arquivo .html para seu adversário e combinem o código.</p>
+      <p class="footer-note"><span class="conn-dot" id="lib-status-dot"></span><span id="lib-status-text">Carregando sistema de conexão...</span></p>
+    </div>
+
+    <div class="screen" id="screen-waiting">
+      <div class="title-row"><h1>Sala pronta!</h1></div>
+      <div class="center"><div class="room-code-badge" id="waiting-room-code">----</div></div>
+      <p class="subtitle" style="margin-top:16px;">Envie esse código para o seu adversário</p>
+      <div class="center">
+        <div class="paw-spinner">🐾</div>
+        <p style="font-weight:800;" class="waiting-dots">Procurando o outro jogador</p>
+      </div>
+      <p class="status-line" id="waiting-self-label"></p>
+    </div>
+
+    <div class="screen" id="screen-countdown">
+      <div class="title-row"><h1>Preparar!</h1></div>
+      <p class="subtitle">🐶 vs 🐱 — na marca, já...</p>
+      <div class="countdown-num" id="countdown-number">3</div>
+    </div>
+
+    <div class="screen" id="screen-race">
+      <div class="title-row" style="margin-bottom:10px;"><h1 style="font-size:24px;">Corrida de Patas</h1></div>
+      <div class="track-wrap">
+        <div class="lane" id="lane-dog">
+          <span class="label">🐶 Cachorro</span>
+          <div class="paw-trail">🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾</div>
+          <div class="finish-flag"></div>
+          <div class="runner" id="runner-dog">🐶</div>
+          <div class="progress-pct" id="pct-dog">0%</div>
+        </div>
+        <div class="lane" id="lane-cat">
+          <span class="label">🐱 Gato</span>
+          <div class="paw-trail">🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾&nbsp;&nbsp;🐾</div>
+          <div class="finish-flag"></div>
+          <div class="runner" id="runner-cat">🐱</div>
+          <div class="progress-pct" id="pct-cat">0%</div>
+        </div>
+      </div>
+      <p class="instructions">Aperte <strong>ESPAÇO</strong> no computador ou toque no botão abaixo — o mais rápido possível!</p>
+      <button class="tap-btn" id="tap-button">TOCA AQUI! 🐾</button>
+    </div>
+
+    <div class="screen" id="screen-result">
+      <div class="result-emoji" id="result-emoji">🏆</div>
+      <h2 class="result-title" id="result-title">Vitória!</h2>
+      <p class="result-sub" id="result-sub">O cachorro cruzou a linha primeiro.</p>
+      <div class="btn-row">
+        <button class="secondary-btn" id="leave-btn">Sair da sala</button>
+        <button class="primary-btn" style="flex:1;" id="rematch-btn">Jogar de novo</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { joinRoom } from 'https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent/+esm';
+
+const APP_ID = 'corrida-de-patas-cachorro-gato-v1';
+const myToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+let role = null;
+let roomCode = null;
+let room = null;
+let target = 30;
+let raceId = 0;
+let myClicks = 0;
+let oppClicks = 0;
+let raceActive = false;
+let raceFinished = false;
+let winnerDeclared = null;
+let peerConnected = false;
+let opponentRole = null;
+let iAmHost = false;
+let countdownTimer = null;
+
+let sendHello, getHello, sendTap, getTap, sendStart, getStart, sendWin, getWin;
+
+const $ = (id) => document.getElementById(id);
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+function setError(msg){ $('setup-error').textContent = msg || ''; }
+
+// ---------- setup UI ----------
+$('btn-dog').addEventListener('click', () => selectRole('p1'));
+$('btn-cat').addEventListener('click', () => selectRole('p2'));
+$('pill-short').addEventListener('click', () => selectDuration(30));
+$('pill-long').addEventListener('click', () => selectDuration(60));
+$('generate-btn').addEventListener('click', generateCode);
+$('room-code-input').addEventListener('input', () => {
+  $('room-code-input').value = $('room-code-input').value.toUpperCase();
+  validateSetup();
+});
+$('join-btn').addEventListener('click', joinRace);
+$('leave-btn').addEventListener('click', leaveRoom);
+$('rematch-btn').addEventListener('click', requestRematch);
+
+function selectRole(r){
+  role = r;
+  $('btn-dog').classList.toggle('selected', r==='p1');
+  $('btn-cat').classList.toggle('selected', r==='p2');
+  validateSetup();
+}
+function selectDuration(t){
+  target = t;
+  $('pill-short').classList.toggle('selected', t===30);
+  $('pill-long').classList.toggle('selected', t===60);
+}
+function generateCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for(let i=0;i<5;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  $('room-code-input').value = code;
+  validateSetup();
+}
+function validateSetup(){
+  const code = $('room-code-input').value.trim();
+  $('join-btn').disabled = !(role && code.length >= 3 && libReady);
+}
+
+let libReady = false;
+try{
+  libReady = true;
+  $('lib-status-dot').classList.add('ok');
+  $('lib-status-text').textContent = 'Sistema de conexão P2P pronto.';
+  validateSetup();
+}catch(e){
+  $('lib-status-text').textContent = 'Não foi possível carregar o sistema de conexão. Verifique sua internet.';
+}
+
+// ---------- join / connect ----------
+function joinRace(){
+  setError('');
+  const code = $('room-code-input').value.trim();
+  if(!role || code.length < 3) return;
+  roomCode = code;
+
+  try{
+    room = joinRoom({ appId: APP_ID }, roomCode);
+    const [sh, gh] = room.makeAction('hello');
+    const [st, gt] = room.makeAction('tap');
+    const [ss, gs] = room.makeAction('start');
+    const [sw, gw] = room.makeAction('win');
+    sendHello = sh; getHello = gh;
+    sendTap = st; getTap = gt;
+    sendStart = ss; getStart = gs;
+    sendWin = sw; getWin = gw;
+
+    getHello(onOpponentHello);
+    getTap(onOpponentTap);
+    getStart(onStartReceived);
+    getWin(onWinReceived);
+
+    room.onPeerJoin(() => {
+      peerConnected = true;
+      sendHello({ role, target, token: myToken });
+    });
+    room.onPeerLeave(() => {
+      peerConnected = false;
+      if(raceActive && !raceFinished){
+        $('waiting-self-label').textContent = 'O adversário desconectou.';
+      }
+    });
+
+    $('waiting-room-code').textContent = roomCode;
+    $('waiting-self-label').textContent = role === 'p1' ? 'Você é o Cachorro 🐶' : 'Você é o Gato 🐱';
+    showScreen('screen-waiting');
+  }catch(e){
+    setError('Não foi possível iniciar a conexão. Verifique sua internet e tente de novo.');
+  }
+}
+
+function onOpponentHello(data){
+  if(data.role === role){
+    setError('');
+    $('waiting-self-label').textContent = 'O adversário escolheu o mesmo animal que você. Combine papéis diferentes e tente de novo.';
+    return;
+  }
+  opponentRole = data.role;
+  iAmHost = myToken < data.token;
+  if(iAmHost){
+    const startAt = Date.now() + 3200;
+    const finalTarget = target;
+    raceId += 1;
+    sendStart({ startAt, target: finalTarget, raceId });
+    applyStart({ startAt, target: finalTarget, raceId });
+  }
+}
+
+function onStartReceived(data){
+  applyStart(data);
+}
+
+function applyStart(data){
+  if(data.raceId <= 0) return;
+  if(data.raceId === raceId && raceActive) return;
+  raceId = data.raceId;
+  target = data.target;
+  myClicks = 0; oppClicks = 0; raceActive = false; raceFinished = false; winnerDeclared = null;
+  resetTrack();
+  beginCountdown(data.startAt);
+}
+
+function onOpponentTap(count){
+  const oppLane = role === 'p1' ? 'cat' : 'dog';
+  oppClicks = count;
+  updateBar(oppLane, oppClicks);
+}
+
+function onWinReceived(winningRole){
+  if(winnerDeclared) return;
+  winnerDeclared = winningRole;
+  raceFinished = true;
+  raceActive = false;
+  showResult(winningRole);
+}
+
+function leaveRoom(){
+  try{ if(room) room.leave(); }catch(e){}
+  room = null; role = null; roomCode = null; myClicks = 0; oppClicks = 0;
+  raceActive = false; raceFinished = false; winnerDeclared = null; peerConnected = false; opponentRole = null;
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  $('btn-dog').classList.remove('selected');
+  $('btn-cat').classList.remove('selected');
+  $('room-code-input').value = '';
+  $('join-btn').disabled = true;
+  showScreen('screen-setup');
+}
+
+// ---------- countdown / race ----------
+function beginCountdown(startAt){
+  showScreen('screen-countdown');
+  const numEl = $('countdown-number');
+  if(countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    const msLeft = startAt - Date.now();
+    const secLeft = Math.ceil(msLeft/1000);
+    if(msLeft <= 0){
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      enterRace();
+    } else if(secLeft <= 3){
+      numEl.textContent = secLeft;
+    }
+  }, 100);
+}
+function enterRace(){
+  if(raceActive || raceFinished) return;
+  raceActive = true;
+  resetTrack();
+  showScreen('screen-race');
+}
+function resetTrack(){
+  myClicks = 0; oppClicks = 0;
+  updateBar('dog', 0); updateBar('cat', 0);
+}
+
+// ---------- tapping ----------
+function handleTap(){
+  if(!raceActive || raceFinished) return;
+  myClicks++;
+  const myLane = role === 'p1' ? 'dog' : 'cat';
+  updateBar(myLane, myClicks);
+  pulseRunner(myLane);
+  try{ sendTap(myClicks); }catch(e){}
+  if(myClicks >= target && !winnerDeclared){
+    winnerDeclared = role;
+    raceFinished = true;
+    raceActive = false;
+    try{ sendWin(role); }catch(e){}
+    showResult(role);
+  }
+}
+$('tap-button').addEventListener('click', handleTap);
+$('tap-button').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); }, {passive:false});
+document.addEventListener('keydown', (e) => {
+  if(e.code === 'Space' && $('screen-race').classList.contains('active')){
+    e.preventDefault();
+    handleTap();
+  }
+});
+
+function updateBar(lane, clicks){
+  const pct = Math.min(100, Math.round((clicks/target)*100));
+  const lanePx = $('lane-' + lane).clientWidth - 46;
+  const runner = $('runner-' + lane);
+  runner.style.left = Math.max(6, (pct/100)*lanePx) + 'px';
+  $('pct-' + lane).textContent = pct + '%';
+}
+function pulseRunner(lane){
+  const runner = $('runner-' + lane);
+  runner.classList.remove('puff');
+  void runner.offsetWidth;
+  runner.classList.add('puff');
+}
+
+function showResult(winningRole){
+  const iAmWinner = winningRole === role;
+  const winnerAnimal = winningRole === 'p1' ? 'Cachorro 🐶' : 'Gato 🐱';
+  $('result-emoji').textContent = iAmWinner ? '🏆' : '🐾';
+  $('result-title').textContent = iAmWinner ? 'Você venceu!' : 'Você perdeu!';
+  $('result-sub').textContent = `O ${winnerAnimal} cruzou a linha de chegada primeiro.`;
+  showScreen('screen-result');
+}
+
+function requestRematch(){
+  raceId += 1;
+  const startAt = Date.now() + 3200;
+  const data = { startAt, target, raceId };
+  try{ sendStart(data); }catch(e){}
+  applyStart(data);
+}
+</script>
+</body>
+</html>
