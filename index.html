@@ -116,7 +116,7 @@
     <div class="screen active" id="screen-setup">
       <div class="title-row"><h1>Corrida de Patas</h1><div class="paws">🐾 🐾 🐾</div></div>
       <p class="subtitle">Cachorro contra gato. Quem toca mais rápido, vence!</p>
-      <div class="badge-standalone">(by Vitor Coelho)</div>
+      <div class="badge-standalone">P2P — conexão direta, sem servidor (Nostr, via esm.sh)</div>
 
       <label class="field-label">Escolha seu competidor</label>
       <div class="role-grid">
@@ -196,7 +196,7 @@
 </div>
 
 <script type="module">
-import { joinRoom } from 'https://cdn.jsdelivr.net/npm/@trystero-p2p/nostr/+esm';
+import { joinRoom } from 'https://esm.sh/trystero';
 
 const APP_ID = 'corrida-de-patas-cachorro-gato-v1';
 const myToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -311,7 +311,7 @@ function joinRace(){
     $('waiting-self-label').textContent = role === 'p1' ? 'Você é o Cachorro 🐶' : 'Você é o Gato 🐱';
     showScreen('screen-waiting');
   }catch(e){
-    setError('Não foi possível iniciar a conexão. Verifique sua internet e tente de novo.');
+    setError('Não foi possível iniciar a conexão (' + (e && e.message ? e.message : 'erro desconhecido') + ').');
   }
 }
 
