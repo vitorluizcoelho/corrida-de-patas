@@ -466,7 +466,15 @@ function updateBar(lane, clicks){
   runner.style.left = Math.max(6, (pct/100)*lanePx) + 'px';
   $('pct-' + lane).textContent = pct + '%';
 }
+  
 function pulseRunner(lane){
+  const runner = $('runner-' + lane);
+  runner.classList.remove('puff');
+  void runner.offsetWidth;
+  runner.classList.add('puff');
+}
+  
+function showResult(winningRole){
   // 1. Soma o ponto para quem ganhou
   if (winningRole === 'p1') {
     dogWins++;
