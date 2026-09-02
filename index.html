@@ -116,7 +116,7 @@
     <div class="screen active" id="screen-setup">
       <div class="title-row"><h1>Corrida de Patas</h1><div class="paws">🐾 🐾 🐾</div></div>
       <p class="subtitle">Cachorro contra gato. Quem toca mais rápido, vence!</p>
-      <div class="badge-standalone">P2P — conexão direta, sem servidor (Nostr, via esm.sh)</div>
+      <div class="badge-standalone">P2P — conexão direta, sem servidor (Nostr, API atual)</div>
 
       <label class="field-label">Escolha seu competidor</label>
       <div class="role-grid">
@@ -216,7 +216,7 @@ let opponentRole = null;
 let iAmHost = false;
 let countdownTimer = null;
 
-let sendHello, getHello, sendTap, getTap, sendStart, getStart, sendWin, getWin;
+let helloAction, tapAction, startAction, winAction;
 
 const $ = (id) => document.getElementById(id);
 
@@ -282,30 +282,26 @@ function joinRace(){
 
   try{
     room = joinRoom({ appId: APP_ID }, roomCode);
-    const [sh, gh] = room.makeAction('hello');
-    const [st, gt] = room.makeAction('tap');
-    const [ss, gs] = room.makeAction('start');
-    const [sw, gw] = room.makeAction('win');
-    sendHello = sh; getHello = gh;
-    sendTap = st; getTap = gt;
-    sendStart = ss; getStart = gs;
-    sendWin = sw; getWin = gw;
+    helloAction = room.makeAction('hello');
+    tapAction = room.makeAction('tap');
+    startAction = room.makeAction('start');
+    winAction = room.makeAction('win');
 
-    getHello(onOpponentHello);
-    getTap(onOpponentTap);
-    getStart(onStartReceived);
-    getWin(onWinReceived);
+    helloAction.onMessage = (data) => onOpponentHello(data);
+    tapAction.onMessage = (count) => onOpponentTap(count);
+    startAction.onMessage = (data) => onStartReceived(data);
+    winAction.onMessage = (winningRole) => onWinReceived(winningRole);
 
-    room.onPeerJoin(() => {
+    room.onPeerJoin = () => {
       peerConnected = true;
-      sendHello({ role, target, token: myToken });
-    });
-    room.onPeerLeave(() => {
+      helloAction.send({ role, target, token: myToken });
+    };
+    room.onPeerLeave = () => {
       peerConnected = false;
       if(raceActive && !raceFinished){
         $('waiting-self-label').textContent = 'O adversário desconectou.';
       }
-    });
+    };
 
     $('waiting-room-code').textContent = roomCode;
     $('waiting-self-label').textContent = role === 'p1' ? 'Você é o Cachorro 🐶' : 'Você é o Gato 🐱';
@@ -327,7 +323,7 @@ function onOpponentHello(data){
     const startAt = Date.now() + 3200;
     const finalTarget = target;
     raceId += 1;
-    sendStart({ startAt, target: finalTarget, raceId });
+    startAction.send({ startAt, target: finalTarget, raceId });
     applyStart({ startAt, target: finalTarget, raceId });
   }
 }
@@ -407,12 +403,12 @@ function handleTap(){
   const myLane = role === 'p1' ? 'dog' : 'cat';
   updateBar(myLane, myClicks);
   pulseRunner(myLane);
-  try{ sendTap(myClicks); }catch(e){}
+  try{ tapAction.send(myClicks); }catch(e){}
   if(myClicks >= target && !winnerDeclared){
     winnerDeclared = role;
     raceFinished = true;
     raceActive = false;
-    try{ sendWin(role); }catch(e){}
+    try{ winAction.send(role); }catch(e){}
     showResult(role);
   }
 }
@@ -452,7 +448,7 @@ function requestRematch(){
   raceId += 1;
   const startAt = Date.now() + 3200;
   const data = { startAt, target, raceId };
-  try{ sendStart(data); }catch(e){}
+  try{ startAction.send(data); }catch(e){}
   applyStart(data);
 }
 </script>
