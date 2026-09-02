@@ -115,8 +115,8 @@
 
     <div class="screen active" id="screen-setup">
       <div class="title-row"><h1>Corrida de Patas</h1><div class="paws">🐾 🐾 🐾</div></div>
-      <p class="subtitle">Cachorro contra gato. Quem toca mais rápido, vence!</p>
-      <div class="badge-standalone">P2P — conexão direta, sem servidor (Nostr, API atual)</div>
+      <p class="subtitle">Cachorro contra gato. O mais rápido vence!</p>
+      <div class="badge-standalone"></div>
 
       <label class="field-label">Escolha seu competidor</label>
       <div class="role-grid">
@@ -129,7 +129,7 @@
         <input type="text" id="room-code-input" class="code-input" maxlength="8" placeholder="EX: PATA1">
         <button class="mini-btn" id="generate-btn">Gerar</button>
       </div>
-      <p class="field-hint">Combine o mesmo código com quem vai jogar contra você.</p>
+      <p class="field-hint">Combine o mesmo código de sala com quem vai jogar contra você.</p>
 
       <label class="field-label">Distância da corrida (usada se você conectar primeiro)</label>
       <div class="duration-row">
@@ -139,7 +139,7 @@
 
       <button class="primary-btn" id="join-btn" disabled>Entrar na corrida</button>
       <div class="error-msg" id="setup-error"></div>
-      <p class="status-line">Envie este mesmo arquivo .html para seu adversário e combinem o código.</p>
+      <p class="status-line">Feito por Vitor Luiz Coelho</p>
       <p class="footer-note"><span class="conn-dot" id="lib-status-dot"></span><span id="lib-status-text">Carregando sistema de conexão...</span></p>
     </div>
 
@@ -215,6 +215,9 @@ let peerConnected = false;
 let opponentRole = null;
 let iAmHost = false;
 let countdownTimer = null;
+let myRematchReady = false;
+let oppRematchReady = false;
+let rematchAction;
 
 let helloAction, tapAction, startAction, winAction;
 
@@ -286,11 +289,16 @@ function joinRace(){
     tapAction = room.makeAction('tap');
     startAction = room.makeAction('start');
     winAction = room.makeAction('win');
+    rematchAction = room.makeAction('rematch');
 
     helloAction.onMessage = (data) => onOpponentHello(data);
     tapAction.onMessage = (count) => onOpponentTap(count);
     startAction.onMessage = (data) => onStartReceived(data);
     winAction.onMessage = (winningRole) => onWinReceived(winningRole);
+    rematchAction.onMessage = () => {
+      oppRematchReady = true;
+      checkRematch();
+    };
 
     room.onPeerJoin = () => {
       peerConnected = true;
@@ -335,9 +343,17 @@ function onStartReceived(data){
 function applyStart(data){
   if(data.raceId <= 0) return;
   if(data.raceId === raceId && raceActive) return;
+  
   raceId = data.raceId;
   target = data.target;
   myClicks = 0; oppClicks = 0; raceActive = false; raceFinished = false; winnerDeclared = null;
+  
+  // Zera a votação e o botão para a próxima partida
+  myRematchReady = false;
+  oppRematchReady = false;
+  $('rematch-btn').disabled = false;
+  $('rematch-btn').textContent = 'Jogar de novo';
+  
   resetTrack();
   beginCountdown(data.startAt);
 }
@@ -445,11 +461,31 @@ function showResult(winningRole){
 }
 
 function requestRematch(){
-  raceId += 1;
-  const startAt = Date.now() + 3200;
-  const data = { startAt, target, raceId };
-  try{ startAction.send(data); }catch(e){}
-  applyStart(data);
+  myRematchReady = true;
+  
+  // Muda o visual do botão para quem já clicou
+  $('rematch-btn').disabled = true;
+  $('rematch-btn').textContent = 'Aguardando adversário...';
+  
+  // Avisa o outro jogador que você está pronto
+  try { rematchAction.send(true); } catch(e){}
+  
+  checkRematch();
+}
+
+function checkRematch() {
+  // Se os DOIS estiverem prontos...
+  if (myRematchReady && oppRematchReady) {
+    // Apenas o "Host" (quem criou a sala primeiro) dita o tempo de largada
+    // Isso evita que o jogo tente iniciar duas vezes ao mesmo tempo
+    if (iAmHost) {
+      raceId += 1;
+      const startAt = Date.now() + 3200;
+      const data = { startAt, target, raceId };
+      try { startAction.send(data); } catch(e){}
+      applyStart(data);
+    }
+  }
 }
 </script>
 </body>
