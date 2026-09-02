@@ -101,7 +101,11 @@
   .status-line{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:14px; font-weight:700;}
   .footer-note{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:16px; opacity:.75;}
   .conn-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#ccc; margin-right:6px; vertical-align:middle;}
-  .conn-dot.ok{ background:#5E9C34; }
+  .conn-dot.ok{ background:#5E9C34; 
+  .score-board { display:flex; justify-content:center; gap:24px; margin-bottom:24px; background:#FFF9EE; border-radius:16px; padding:12px; border:2px solid #EADFCB; }
+  .score-card { display:flex; flex-direction:column; align-items:center; }
+  .score-emoji { font-size:24px; margin-bottom:4px; }
+  .score-num { font-family:'Baloo 2',cursive; font-size:32px; font-weight:800; color:var(--ink); line-height:1; }
 </style>
 </head>
 <body>
@@ -186,6 +190,18 @@
       <div class="result-emoji" id="result-emoji">🏆</div>
       <h2 class="result-title" id="result-title">Vitória!</h2>
       <p class="result-sub" id="result-sub">O cachorro cruzou a linha primeiro.</p>
+      
+      <div class="score-board">
+        <div class="score-card">
+          <div class="score-emoji">🐶</div>
+          <div class="score-num" id="score-dog">0</div>
+        </div>
+        <div class="score-card">
+          <div class="score-emoji">🐱</div>
+          <div class="score-num" id="score-cat">0</div>
+        </div>
+      </div>
+
       <div class="btn-row">
         <button class="secondary-btn" id="leave-btn">Sair da sala</button>
         <button class="primary-btn" style="flex:1;" id="rematch-btn">Jogar de novo</button>
@@ -218,6 +234,8 @@ let countdownTimer = null;
 let myRematchReady = false;
 let oppRematchReady = false;
 let rematchAction;
+let dogWins = 0;
+let catWins = 0;
 
 let helloAction, tapAction, startAction, winAction;
 
@@ -382,6 +400,10 @@ function leaveRoom(){
   $('room-code-input').value = '';
   $('join-btn').disabled = true;
   showScreen('screen-setup');
+  dogWins = 0;
+  catWins = 0;
+  $('score-dog').textContent = '0';
+  $('score-cat').textContent = '0';
 }
 
 // ---------- countdown / race ----------
@@ -445,18 +467,25 @@ function updateBar(lane, clicks){
   $('pct-' + lane).textContent = pct + '%';
 }
 function pulseRunner(lane){
-  const runner = $('runner-' + lane);
-  runner.classList.remove('puff');
-  void runner.offsetWidth;
-  runner.classList.add('puff');
-}
+  // 1. Soma o ponto para quem ganhou
+  if (winningRole === 'p1') {
+    dogWins++;
+  } else if (winningRole === 'p2') {
+    catWins++;
+  }
 
-function showResult(winningRole){
+  // 2. Atualiza os números na tela
+  $('score-dog').textContent = dogWins;
+  $('score-cat').textContent = catWins;
+
+  // 3. Atualiza os textos (vitória/derrota)
   const iAmWinner = winningRole === role;
   const winnerAnimal = winningRole === 'p1' ? 'Cachorro 🐶' : 'Gato 🐱';
+  
   $('result-emoji').textContent = iAmWinner ? '🏆' : '🐾';
   $('result-title').textContent = iAmWinner ? 'Você venceu!' : 'Você perdeu!';
   $('result-sub').textContent = `O ${winnerAnimal} cruzou a linha de chegada primeiro.`;
+  
   showScreen('screen-result');
 }
 
