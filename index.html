@@ -236,6 +236,8 @@ let oppRematchReady = false;
 let rematchAction;
 let dogWins = 0;
 let catWins = 0;
+let lastTapTime = 0;
+  
 
 let helloAction, tapAction, startAction, winAction;
 
@@ -437,6 +439,13 @@ function resetTrack(){
 // ---------- tapping ----------
 function handleTap(){
   if(!raceActive || raceFinished) return;
+  // --- TRAVA DE SEGURANÇA (Anti-Macro / Anti-Multitoque) ---
+  const now = Date.now();
+  if (now - lastTapTime < 80) { 
+    return; // Ignora o clique se ocorreu há menos de 80ms do último
+  }
+  lastTapTime = now;
+  // --------------------------------------------------------
   myClicks++;
   const myLane = role === 'p1' ? 'dog' : 'cat';
   updateBar(myLane, myClicks);
