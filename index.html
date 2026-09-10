@@ -107,6 +107,8 @@
   .score-emoji { font-size:24px; margin-bottom:4px; }
   .score-num { font-family:'Baloo 2',cursive; font-size:32px; font-weight:800; color:var(--ink); line-height:1; }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 </head>
 <body>
 
@@ -303,15 +305,23 @@ function joinRace(){
   if(!role || code.length < 3) return;
   roomCode = code;
 
+  console.log('🔄 [DEBUG] 1. Iniciando conexão P2P...');
+  console.log('▶️ Sala:', roomCode, '| Meu Papel:', role);
+
   try{
     room = joinRoom({ appId: APP_ID }, roomCode);
+    console.log('📡 [DEBUG] 2. Sala criada. Aguardando servidor de sinalização...');
+
     helloAction = room.makeAction('hello');
     tapAction = room.makeAction('tap');
     startAction = room.makeAction('start');
     winAction = room.makeAction('win');
     rematchAction = room.makeAction('rematch');
 
-    helloAction.onMessage = (data) => onOpponentHello(data);
+    helloAction.onMessage = (data, peerId) => {
+      console.log('📨 [DEBUG] 5. Recebeu dados do adversário:', data, '| ID:', peerId);
+      onOpponentHello(data);
+    };
     tapAction.onMessage = (count) => onOpponentTap(count);
     startAction.onMessage = (data) => onStartReceived(data);
     winAction.onMessage = (winningRole) => onWinReceived(winningRole);
@@ -320,11 +330,15 @@ function joinRace(){
       checkRematch();
     };
 
-    room.onPeerJoin = () => {
+    room.onPeerJoin = (peerId) => {
+      console.log('🤝 [DEBUG] 3. UM ADVERSÁRIO ENTROU NA SALA! ID de conexão:', peerId);
       peerConnected = true;
+      console.log('📤 [DEBUG] 4. Enviando meu animal e token para ele...');
       helloAction.send({ role, target, token: myToken });
     };
-    room.onPeerLeave = () => {
+
+    room.onPeerLeave = (peerId) => {
+      console.warn('❌ [DEBUG] ADVERSÁRIO SAIU DA SALA:', peerId);
       peerConnected = false;
       if(raceActive && !raceFinished){
         $('waiting-self-label').textContent = 'O adversário desconectou.';
@@ -335,6 +349,7 @@ function joinRace(){
     $('waiting-self-label').textContent = role === 'p1' ? 'Você é o Cachorro 🐶' : 'Você é o Gato 🐱';
     showScreen('screen-waiting');
   }catch(e){
+    console.error('🚨 [DEBUG CRÍTICO] Falha ao tentar usar a biblioteca Trystero:', e);
     setError('Não foi possível iniciar a conexão (' + (e && e.message ? e.message : 'erro desconhecido') + ').');
   }
 }
